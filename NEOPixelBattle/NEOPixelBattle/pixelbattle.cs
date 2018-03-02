@@ -36,7 +36,7 @@ namespace Neo.SmartContract
                 return false;
 
             byte[] key = new byte[] { };
-            key.Concat("FirstBattleGound".AsByteArray());
+            key.Concat("FirstBattleGround".AsByteArray());
             key.Concat(i);
             key.Concat(j);
             Storage.Put(Storage.CurrentContext, key, color);
@@ -50,7 +50,7 @@ namespace Neo.SmartContract
                 return null;
 
             byte[] key = new byte[] { };
-            key.Concat("FirstBattleGound".AsByteArray());
+            key.Concat("FirstBattleGround".AsByteArray());
             key.Concat(i);
             key.Concat(j);
             return Storage.Get(Storage.CurrentContext, key);
