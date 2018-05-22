@@ -11,8 +11,11 @@ namespace Neo.SmartContract
         private static readonly byte[] FirstBattleGroundKey = "FirstBattleGround".AsByteArray();
         private static readonly byte[] DefaultColor = "#ffffff".AsByteArray();
 
-        private static readonly int Rows = 3000;
-        private static readonly int Columns = 3000;
+        private static readonly byte[] LastAddressKey = "LastAddress".AsByteArray();
+
+        // to create a million of pixels to paint 
+        private static readonly int Rows = 1000;
+        private static readonly int Columns = 1000;
 
         public static object Main(string operation, params object[] args)
         {
@@ -30,8 +33,8 @@ namespace Neo.SmartContract
 
             if ( operation == "SetColorRGB()")
             {
-                if (args.Length != 3) return false;
-                return SetColorRGB((int)args[0], (int)args[1], ((string)args[2]).AsByteArray());
+                if (args.Length != 4) return false;
+                return SetColorRGB((int)args[0], (int)args[1], ((string)args[2]).AsByteArray(), (byte[])args[3]);
             }
 
             if (operation == "GetColorRGB()")
@@ -43,27 +46,42 @@ namespace Neo.SmartContract
             return false;
         }
 
-        // it can only be done once, it was made to start the game after deploy it
+        /*
+             This method starts the game
+             It can only be called one time since the deploy
+        */
         private static bool StartTheGame()
         {
             byte[] data = Storage.Get(Storage.CurrentContext, FirstBattleGroundKey);
 
             // checking if the data was initialized, it will be done only once
-            if (data.Length != Rows * Columns * DefaultColor.Length)
+            if (data.Length == 0)
             {
-                data = new byte[] { };
-                for (int i = 0; i < Rows * Columns; ++i)
-                    data.Concat(DefaultColor); // initializing with the white color
+                for (int i = 0; i < Rows; ++i)
+                    for (int j = 0; j < Columns; ++j)
+                        data.Concat(DefaultColor);// initializing with the white color
                 return true;
             }
 
             return false;
         }
 
-        // function resposible for set color to a pixel
-        // the color must be in hex like #4286f4
-        private static bool SetColorRGB(int i, int j, byte[] color)
+        /*
+            Function resposible for set color to a pixel
+            The color must be in hex like #4286f4
+        */
+        private static bool SetColorRGB(int i, int j, byte[] color, byte[] address)
         {
+            //checking if the address is the same of caller's address
+            if (!VerifyWitness(address)) 
+                return false;
+
+            // checking if the last address that changed a color is the same
+            // the idea is make impossible for one address change all the pixels sequentially
+            byte[] LastAddress = Storage.Get(Storage.CurrentContext, LastAddressKey);
+            if (address == LastAddress)
+                return false;
+
             if (color.Length != DefaultColor.Length)
                 return false;
             if (!CheckIndex(i, j))
@@ -82,10 +100,16 @@ namespace Neo.SmartContract
 
             Storage.Put(Storage.CurrentContext, FirstBattleGroundKey, data);
 
+
+            // save the current address as the last one that changed the data
+            Storage.Put(Storage.CurrentContext, LastAddressKey, address);
+
             return true;
         }
 
-        // get a color from a specific pixel
+        /*
+            Get a color from a specific pixel
+        */
         private static byte[] GetColorRGB(int i, int j)
         {
             if (!CheckIndex(i,j))
@@ -95,19 +119,25 @@ namespace Neo.SmartContract
             return data.Range(GetOneDimIndex(i, j), DefaultColor.Length);
         }
 
-        // get all pixel data
+        /*
+            Get all pixel data
+        */
         private static byte[] GetAllBattleGround()
         {
             return Storage.Get(Storage.CurrentContext, FirstBattleGroundKey);
         }
 
-        // get the one dimension index
+        /*
+            Get the one dimension index
+        */
         private static int GetOneDimIndex(int i, int j)
         {
             return (i * Columns * DefaultColor.Length) + (j * DefaultColor.Length);
         }
 
-        // get the one dimension index
+        /*
+            Check if the index is valid
+        */
         private static bool CheckIndex(int i, int j)
         {
             if (i < 0 || j < 0)
@@ -115,6 +145,14 @@ namespace Neo.SmartContract
             if (i > Rows || j > Columns)
                 return false;
             return true;
+        }
+
+        /*
+            Check if the caller is who claims to be
+        */
+        private static bool VerifyWitness(byte[] address)
+        {
+            return Runtime.CheckWitness(address);
         }
     }
 }
