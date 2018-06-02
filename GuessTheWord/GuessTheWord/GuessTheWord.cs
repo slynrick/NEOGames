@@ -10,10 +10,10 @@ namespace Neo.SmartContract
     {
         private static readonly byte[] PointsKey = "PointsKey".AsByteArray();
         private static readonly byte[] WordsKey = "WordsKey".AsByteArray();
+        private static readonly byte[] StatisticsKey = "StatisticsKey".AsByteArray();
         private static readonly byte[] CurrentPackKey = "CurrentPackKey".AsByteArray();
         private static readonly byte[] WordCountKey = "WordCountKey".AsByteArray();
         private static readonly BigInteger WordsPerPack = 500;
-        private static readonly BigInteger Incremental = 1;
 
         public static object Main(string operation, params object[] args)
         {
@@ -137,8 +137,9 @@ namespace Neo.SmartContract
             if (!VerifyWitness(address))
                 return false;
 
-            byte[] key = GetAddressWordKey(address);
-            byte[] data = Storage.Get(Storage.CurrentContext, key);
+            byte[] data = Storage.Get(Storage.CurrentContext, address);
+
+            Map<byte[], byte[]> addressInfo = (Map<byte[], byte[]>)Framework.Helper.Deserialize(data);
 
             if (data.Length == 0)
                 return false;
@@ -156,13 +157,8 @@ namespace Neo.SmartContract
         /// <returns>Return the points of this address as BigInteger</returns>
         private static BigInteger GetAddressPoints(byte[] address)
         {
-            byte[] key = GetAddressPointsKey(address);
-            byte[] points = Storage.Get(Storage.CurrentContext, key);
-            if (points.Length == 0)
-            {
-                return 0;
-            }
-            return points.AsBigInteger();
+            Map<byte[], byte[]> addressInfo = GetAddressInfo(address);
+            return addressInfo[PointsKey].AsBigInteger();
         }
 
         /// <summary>Check if the caller is who claims to be ( not accessible for invocation )</summary>
@@ -173,33 +169,48 @@ namespace Neo.SmartContract
             return Runtime.CheckWitness(address);
         }
 
+        /// <summary>Get the word count and the pack count</summary>
+        /// <returns>Return the Map with the statistics</returns>
+        private static Map<byte[], BigInteger> GetContractStatistics()
+        {
+            byte[] data = Storage.Get(Storage.CurrentContext, StatisticsKey);
+
+            Map<byte[], BigInteger> contractStatistics;
+            if (data.Length == 0)
+            {
+                contractStatistics = new Map<byte[], BigInteger>();
+                contractStatistics[CurrentPackKey] = 0;
+                contractStatistics[WordCountKey] = 0;
+            }
+            else
+            {
+                contractStatistics = (Map<byte[], BigInteger>)Framework.Helper.Deserialize(data);
+            }
+
+            return contractStatistics;
+        }
+
         /// <summary>Get the current pack of words</summary>
         /// <returns>Return the number as  BigInteger</returns>
         private static BigInteger GetCurrentPack()
         {
-            byte[] pack = Storage.Get(Storage.CurrentContext, CurrentPackKey);
-            if (pack.Length == 0)
-                return 0;
-            return pack.AsBigInteger();
+            return GetContractStatistics()[CurrentPackKey];
         }
 
         /// <summary>Increment the pack by one each 500 words added</summary>
         /// <returns>Nothing</returns>
         private static void UpdateCurrentPack()
         {
-            BigInteger CurrentPack = GetCurrentPack();
-            CurrentPack = CurrentPack + Incremental;
-            Storage.Put(Storage.CurrentContext, CurrentPackKey, CurrentPack);
+            Map<byte[], BigInteger> contractStatistics = GetContractStatistics();
+            contractStatistics[CurrentPackKey] += 1;
+            Storage.Put(Storage.CurrentContext, StatisticsKey, contractStatistics.Serialize());
         }
 
         /// <summary>Get the number of words added until the beginning</summary>
         /// <returns>Return the number as BigInteger</returns>
         private static BigInteger GetWordCount()
         {
-            byte[] wordCount = Storage.Get(Storage.CurrentContext, WordCountKey);
-            if (wordCount.Length == 0)
-                return 0;
-            return wordCount.AsBigInteger();
+            return GetContractStatistics()[WordCountKey];
         }
 
         /// <summary>Update the number of word added into the contract</summary>
@@ -207,10 +218,12 @@ namespace Neo.SmartContract
         /// <returns>Nothing</returns>
         private static void UpdateWordCount(BigInteger count)
         {
-            Storage.Put(Storage.CurrentContext, WordCountKey, count);
+            Map<byte[], BigInteger> contractStatistics = GetContractStatistics();
+            contractStatistics[WordCountKey] += 1;
+            Storage.Put(Storage.CurrentContext, StatisticsKey, contractStatistics.Serialize());
         }
 
-        /// <summary>Add a word to the contract</summary>
+        /// <summary>Get the storage of a pack</summary>
         /// <returns>Return true if the word was added</returns>
         private static byte[] GetCurrentKey()
         {
@@ -218,7 +231,7 @@ namespace Neo.SmartContract
             return Hash256(WordsKey.Concat(CurrentPack));
         }
 
-        /// <summary>Get the key of some pack of words</summary>
+        /// <summary>Get the key of one pack of words</summary>
         /// <param name="pack">the number of the pack</param>
         /// <returns>Return a Hash256 as a storage key</returns>
         private static byte[] GetPackKey(BigInteger pack)
@@ -226,12 +239,27 @@ namespace Neo.SmartContract
             return Hash256(WordsKey.Concat(pack.AsByteArray()));
         }
 
-        /// <summary>Get the key for the word sotrage of an address</summary>
-        /// <param name="address">The target address</param>
-        /// <returns>Return a Hash256 as a storage key</returns>
-        private static byte[] GetAddressWordKey(byte[] address)
+        /// <summary>Get the map with the address information</summary>
+        /// <param name="address">the target address</param>
+        /// <returns>Return a Map</returns>
+        private static Map<byte[], byte[]> GetAddressInfo(byte[] address)
         {
-            return Hash256(address.Concat(WordsKey));
+            byte[] data = Storage.Get(Storage.CurrentContext, address);
+
+            Map<byte[], byte[]> addressInfo;
+            if(data.Length == 0)
+            {
+                addressInfo = new Map<byte[], byte[]>();
+                BigInteger points = 0;
+                addressInfo[PointsKey] = points.AsByteArray();
+                addressInfo[WordsKey] = null;
+            }
+            else
+            {
+                addressInfo = (Map<byte[], byte[]>)Framework.Helper.Deserialize(data);
+            }
+
+            return addressInfo;
         }
 
         /// <summary>Add a word to the address</summary>
@@ -240,7 +268,9 @@ namespace Neo.SmartContract
         /// <returns>Nothing</returns>
         private static void AddWordToAddress(String word, byte[] address)
         {
-            Storage.Put(Storage.CurrentContext, GetAddressWordKey(address), word);
+            Map<byte[], byte[]> addressInfo = GetAddressInfo(address);
+            addressInfo[WordsKey] = word.AsByteArray();
+            Storage.Put(Storage.CurrentContext, address, addressInfo.Serialize());
         }
 
         /// <summary>Remove a word from the address after guess it right</summary>
@@ -248,15 +278,9 @@ namespace Neo.SmartContract
         /// <returns>Nothing</returns>
         private static void CleanAddressWord(byte[] address)
         {
-            Storage.Delete(Storage.CurrentContext, GetAddressWordKey(address));
-        }
-
-        /// <summary>Get the key for the points storage of an address</summary>
-        /// <param name="address">The target address</param>
-        /// <returns>Return a Hash256 as a storage key</returns>
-        private static byte[] GetAddressPointsKey(byte[] address)
-        {
-            return Hash256(address.Concat(PointsKey));
+            Map<byte[], byte[]> addressInfo = GetAddressInfo(address);
+            addressInfo[WordsKey] = null;
+            Storage.Put(Storage.CurrentContext, address, addressInfo.Serialize());
         }
 
         /// <summary>Increment one point to the address after guess the word</summary>
@@ -264,9 +288,9 @@ namespace Neo.SmartContract
         /// <returns>Nothing</returns>
         private static void AddPointToTheAddress(byte[] address)
         {
-            byte[] key = GetAddressPointsKey(address);
-            BigInteger points = GetAddressPoints(address) + 1;
-            Storage.Put(Storage.CurrentContext, key, points);
+            Map<byte[], byte[]> addressInfo = GetAddressInfo(address);
+            addressInfo[PointsKey] = (addressInfo[PointsKey].AsBigInteger() + 1).AsByteArray();
+            Storage.Put(Storage.CurrentContext, address, addressInfo.Serialize());
         }
     }
 }
