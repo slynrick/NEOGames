@@ -22,16 +22,19 @@ namespace Neo.SmartContract
 
         public static object Main(string operation, params object[] args)
         {
-            if ( operation == "SetColorRGB()")
+            if( Runtime.Trigger == TriggerType.Application || Runtime.Trigger == TriggerType.ApplicationR )
             {
-                if (args.Length != 4) return false;
-                return SetColorRGB((BigInteger)args[0], (BigInteger)args[1], ((String)args[2]).AsByteArray(), (byte[])args[3]);
-            }
+                if (operation == "SetColorRGB()")
+                {
+                    if (args.Length != 4) return false;
+                    return SetColorRGB((BigInteger)args[0], (BigInteger)args[1], ((String)args[2]).AsByteArray(), (byte[])args[3]);
+                }
 
-            if (operation == "GetColorRGB()")
-            {
-                if (args.Length != 2) return false;
-                return GetColorRGB((BigInteger)args[0], (BigInteger)args[1]);
+                if (operation == "GetColorRGB()")
+                {
+                    if (args.Length != 2) return false;
+                    return GetColorRGB((BigInteger)args[0], (BigInteger)args[1]);
+                }
             }
 
             return false;

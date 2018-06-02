@@ -5,6 +5,8 @@ I don't like to think in games inside the blockchain that only uses the database
 ## Games in this repository:
 - [NEOPixelBattle ( C# )](NEOPixelBattle/README.md)
 	- By: [@FabioRick](https://github.com/FabioRick)
+- [GuessTheWord ( C# )](GuessTheWord/README.md)
+	- By: [@FabioRick](https://github.com/FabioRick)
 
 ## Put your game idea here and let the community help you out
 
