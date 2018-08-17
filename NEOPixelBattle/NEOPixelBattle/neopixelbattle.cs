@@ -74,8 +74,8 @@ namespace Neo.SmartContract
         private static String GetColorRGB(BigInteger i, BigInteger j)
         {
             if (!CheckIndex(i,j))
-                return null;
-            byte[] data = Storage.Get(Storage.CurrentContext, GetPixelStorageKey(i, j));
+                return "Not a valid index";
+            byte[] data = Storage.Get(Storage.CurrentContext, "oi");
             if (data.Length > 0)
                 return data.AsString();
             else
@@ -120,7 +120,7 @@ namespace Neo.SmartContract
             if (color.Length != DefaultColor.Length)
                 return false;
 
-            if (color[0] == '#')
+            if (color[0] != '#')
                 return false;
 
             for ( int i = 1; i < color.Length; ++i)
