@@ -4,7 +4,7 @@ I wanted to bring the pixel battle game like into the NEO Blockchain, wich is ve
 
 ## Rules:
 - Is a shared white table with a million pixel to everyone on the network play.
-- Each address can't paint more than one pixel in sequence. Must some other address do it after u for you to play again.
+- Any address can send an color twice in a roll, must some other player put a color inside the board before you go!
 
 - SetColorRGB() paint a pixel with the choosen color
     - The i and j refers to the matrix position of the pixel

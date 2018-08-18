@@ -18,7 +18,7 @@ namespace Neo.SmartContract
         private static readonly int Columns = 1000;
 
         [DisplayName("Colored")]
-        public static event Action<BigInteger, BigInteger> Colored;
+        public static event Action<BigInteger, BigInteger, String> Colored;
 
         public static object Main(string operation, params object[] args)
         {
@@ -50,6 +50,7 @@ namespace Neo.SmartContract
         {
             if (!VerifyWitness(address)) 
                 return false;
+
             byte[] LastAddress = Storage.Get(Storage.CurrentContext, LastAddressKey);
             if (address == LastAddress)
                 return false;
@@ -63,7 +64,7 @@ namespace Neo.SmartContract
             Storage.Put(Storage.CurrentContext, GetPixelStorageKey(i, j), color);
             Storage.Put(Storage.CurrentContext, LastAddressKey, address);
 
-            Colored(i, j);
+            Colored(i, j, color.AsString());
             return true;
         }
 
@@ -75,7 +76,7 @@ namespace Neo.SmartContract
         {
             if (!CheckIndex(i,j))
                 return "Not a valid index";
-            byte[] data = Storage.Get(Storage.CurrentContext, "oi");
+            byte[] data = Storage.Get(Storage.CurrentContext, GetPixelStorageKey(i, j));
             if (data.Length > 0)
                 return data.AsString();
             else
