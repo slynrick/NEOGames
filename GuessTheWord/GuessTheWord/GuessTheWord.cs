@@ -1,5 +1,6 @@
 ﻿using Neo.SmartContract.Framework;
 using Neo.SmartContract.Framework.Services.Neo;
+using Neo.SmartContract.Framework.Services.System;
 using System;
 using System.ComponentModel;
 using System.Numerics;
@@ -100,8 +101,9 @@ namespace Neo.SmartContract
             if (!VerifyWitness(address))
                 return "ERROR: Not the Address";
 
-            Random rand = new Random((int)Blockchain.GetHeight());
-            BigInteger value = new BigInteger(rand.Serialize());
+            Transaction tx = (Transaction)ExecutionEngine.ScriptContainer;
+            byte[] rand = tx.Hash;
+            BigInteger value = rand.AsBigInteger();
             BigInteger CurrentPack = GetCurrentPack();
 
             BigInteger pack = value % CurrentPack;
