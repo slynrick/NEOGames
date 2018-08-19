@@ -23,4 +23,4 @@ Thanks to the [neocompiler.io](https://neocompiler.io/) team that make the share
 
 Thanks to the [Liqing Pan](https://github.com/dprat0821) for discussing many ideas that could help our both projects, one specifically is the multi-random number algorithm in the block and, of course, encourage me to submit the game i had done on my github page.
 
-Also great thanks to the [norchain.io](norchain.io) team that create [Neunity](http://www.norchain.io/neounity) tool that really helped me.
+Also great thanks to the [norchain.io](https://github.com/norchain) team that create [Neunity](https://github.com/norchain/Neunity) tool that really helped me.
