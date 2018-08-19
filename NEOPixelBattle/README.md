@@ -15,3 +15,12 @@ I wanted to bring the pixel battle game like into the NEO Blockchain, wich is ve
     - The i and j refers to the matrix position of the pixel
 	
 - Colored is an event that is emited every time that one address change the color of a pixel
+
+
+## Thanks
+
+Thanks to the [neocompiler.io](https://neocompiler.io/) team that make the shared private net usefull for tests. I was able to create just a front end to comunicate with the SmartContract i made, since when i created the game i had no intention to create an interface, not even deploy it since i made it just for Fun.
+
+Thanks to the [Liqing Pan](https://github.com/dprat0821) for discussing many ideas that could help our both projects, one specifically is the multi-random number algorithm in the block and, of course, encourage me to submit the game i had done on my github page.
+
+Also great thanks to the [norchain.io](norchain.io) team that create [Neunity](http://www.norchain.io/neounity) tool that really helped me.
